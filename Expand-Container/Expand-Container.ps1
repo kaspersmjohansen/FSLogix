@@ -124,7 +124,7 @@ function Expand-ContainerPartition
 
 function Expand-Container
     {
-        Start-Transcript -Path "transcript.log"
+        Start-Transcript -Path "$PSScriptRoot\transcript.log"
         If (Get-Container -gt 0)
         {
             # Optimizes and defrags any VHD/VHDX files found
