@@ -4,7 +4,11 @@ Name:               Create-ProfileShare
 Author:             Kasper Johansen
 Website:            https://virtualwarlock.net
 Last modified by:   Kasper Johansen
-Last modified Date: 27-10-2029
+Last modified Date: 07-02-2021
+
+Change notes:
+07-02-2021 - Implemented the recommended FSLogix share permissions. Change is on line 98. 
+             The original configuration is commented out on line 97 - it will be removed at some point.
 
 
 ***************************************************************************************************************************************
@@ -16,13 +20,15 @@ Last modified Date: 27-10-2029
     This script creates a windows profile share with the recommended permission for security locked down profiles as per Microsoft
     See more here: https://technet.microsoft.com/en-us/library/jj649079(v=ws.11).aspx
 
+    The script can also create an FSLogix profile/office container share with the recommended NTFS security permissions.
+
     The script should be executed on the file server where the profile share is to be created. 
     If the specified profile folder does not exist, the script creates it.
     
-    This script requires administrative privileges.
+    This script requires administrative privileges and has been tested on Windows Server 2016 and Windows Server 2019.
 
 .PARAMETER SharePath
-    The full path to the profile folder on the file server - eg. H:\Profiles
+    The full path to the profile folder on the file server - eg. E:\Profiles
 
 .PARAMETER ShareGroup
     The local or Active Directory group to grant share permission. 
@@ -33,25 +39,24 @@ Last modified Date: 27-10-2029
     If not specified, the default local group, which is "Users" is configured.
 
 .SWITCH FSLogix
-    If specified the custom NTFS security permissions "Create Files/Write Data" is added to the recommended permissions.
-    These permissions are needed so that the user is able to create a FSLogix Profile Container, if it does not exist.
+    If specified the recommended FSLogix share permissions are configured:
+    https://docs.microsoft.com/en-us/fslogix/fslogix-storage-config-ht
 
 .EXAMPLES
-    Create a profile share on H:\ in the folder Profiles with a share name Profiles$:
-            Create-ProfileShare -SharePath H:\Profiles -ShareName Profiles$
+    Create a profile share on E:\ in the folder Profiles with a share name Profiles$:
+            Create-ProfileShare -SharePath E:\Profiles -ShareName Profiles$
 
-    Create a profile share on H:\ in the folder Profiles with a share name Profiles$ with a share name Profiles$ 
+    Create a profile share on E:\ in the folder Profiles with a share name Profiles$ with a share name Profiles$ 
     and the Active Directy group CitrixUsers is granted share access
-                Create-ProfileShare -SharePath H:\Profiles -ShareName Profiles$ -ShareGroup CitrixUsers
+                Create-ProfileShare -SharePath E:\Profiles -ShareName Profiles$ -ShareGroup CitrixUsers
 
-    Create a profile share on H:\ in the folder Profiles with a share name Profiles$ with a share name Profiles$ 
+    Create a profile share on E:\ in the folder Profiles with a share name Profiles$ with a share name Profiles$ 
     and the Active Directy group CitrixUsers is granted share access and NTFS security permissions
-                Create-ProfileShare -SharePath H:\Profiles -ShareName Profiles$ -ShareGroup CitrixUsers -NTFSGroup CitrixUsers
+                Create-ProfileShare -SharePath E:\Profiles -ShareName Profiles$ -ShareGroup CitrixUsers -NTFSGroup CitrixUsers
 
-    Create a profile share on H:\ in the folder Profiles with a share name Profiles$ 
+    Create a profile share on E:\ in the folder Profiles with a share name Profiles$ 
     and the NTFS security permissions for FSLogix is added:
-            Create-ProfileShare -SharePath H:\Profiles -ShareName Profiles$ -FSLogix
-
+            Create-ProfileShare -SharePath E:\Profiles -ShareName Profiles$ -FSLogix
 
 ***************************************************************************************************************************************
 #>
@@ -91,7 +96,8 @@ function Create-ProfileShare ($SharePath, $ShareName, $ShareGroup, $NTFSGroup, $
                 $acl.AddAccessRule($rule)
                 $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Creator OWner","FullControl", "ContainerInherit, ObjectInherit", "InheritOnly", "Allow")
                 $acl.AddAccessRule($rule)
-                $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$NTFSGroup","ReadData, CreateFiles, AppendData, Synchronize", "None", "None", "Allow")
+                #$rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$NTFSGroup","ReadData, CreateFiles, AppendData, Synchronize", "None", "None", "Allow")
+                $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$NTFSGroup","Modify", "None", "None", "Allow")
                 $acl.AddAccessRule($rule)
                 Set-Acl $SharePath $acl
             }
